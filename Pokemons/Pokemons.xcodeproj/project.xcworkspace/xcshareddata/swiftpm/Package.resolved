@@ -1,0 +1,23 @@
+{
+  "pins" : [
+    {
+      "identity" : "friendly-urlsession",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/kefaxoo/friendly-urlsession",
+      "state" : {
+        "branch" : "main",
+        "revision" : "2a9c080bf17a44f546b7c0b5bcaa6137ebf83df1"
+      }
+    },
+    {
+      "identity" : "snapkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/SnapKit/SnapKit",
+      "state" : {
+        "revision" : "f222cbdf325885926566172f6f5f06af95473158",
+        "version" : "5.6.0"
+      }
+    }
+  ],
+  "version" : 2
+}
