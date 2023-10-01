@@ -9,3 +9,4 @@ import Foundation
 
 typealias PokeMain = ResponsePokeMainModel
 typealias PokeInfo = ResponsePokeInfoModel
+typealias PokeFullInfo = ResponsePokeFullModel

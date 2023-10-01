@@ -12,6 +12,8 @@ protocol PokemonsListPresenterProtocol: AnyObject {
     var pokemonsCount: Int { get }
     func configureView()
     func getPokemonName(for index: Int) -> String
+    func loadMorePokemons()
+    func didSelect(at index: Int)
 }
 
 final class PokemonsListPresenter: PokemonsListPresenterProtocol {
@@ -37,12 +39,28 @@ final class PokemonsListPresenter: PokemonsListPresenterProtocol {
             self?.pokemons.append(contentsOf: pokemons)
             self?.canLoadMore = canLoadMore
             self?.view?.reloadData()
-        }, failure: {
-            
+        }, failure: { [weak self] in
+            self?.view?.reloadData()
         })
     }
     
     func getPokemonName(for index: Int) -> String {
         return self.pokemons[index].name.capitalized
+    }
+    
+    func loadMorePokemons() {
+        guard canLoadMore else { return }
+        
+        interactor?.getPokemons(offset: self.pokemonsCount, success: { [weak self] pokemons, canLoadMore in
+            self?.pokemons.append(contentsOf: pokemons)
+            self?.canLoadMore = canLoadMore
+            self?.view?.reloadData()
+        }, failure: {
+            self.view?.reloadData()
+        })
+    }
+    
+    func didSelect(at index: Int) {
+        self.router?.openPokemon(with: self.pokemons[index].id)
     }
 }

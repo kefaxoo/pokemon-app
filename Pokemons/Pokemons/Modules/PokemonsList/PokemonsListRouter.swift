@@ -8,7 +8,7 @@
 import Foundation
 
 protocol PokemonsListRouterProtocol: AnyObject {
-    
+    func openPokemon(with id: String)
 }
 
 final class PokemonsListRouter: PokemonsListRouterProtocol {
@@ -16,5 +16,9 @@ final class PokemonsListRouter: PokemonsListRouterProtocol {
     
     init(view: PokemonsListViewProtocol) {
         self.view = view
+    }
+    
+    func openPokemon(with id: String) {
+        self.view?.pushViewController(vc: PokemonInfoView(id: id))
     }
 }

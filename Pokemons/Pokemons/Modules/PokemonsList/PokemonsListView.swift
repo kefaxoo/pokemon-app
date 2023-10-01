@@ -9,9 +9,17 @@ import UIKit
 
 protocol PokemonsListViewProtocol: AnyObject {
     func reloadData()
+    func pushViewController(vc: UIViewController)
 }
 
 final class PokemonsListView: UIViewController {
+    private lazy var spinnerView: UIActivityIndicatorView = {
+        let activityIndicatorView = UIActivityIndicatorView()
+        activityIndicatorView.style = .large
+        activityIndicatorView.isHidden = true
+        return activityIndicatorView
+    }()
+    
     private lazy var pokemonsTableView: UITableView = {
         let tableView = UITableView(frame: .zero, style: .insetGrouped)
         tableView.dataSource = self
@@ -21,7 +29,7 @@ final class PokemonsListView: UIViewController {
     }()
     
     var presenter: PokemonsListPresenter?
-    private var configurator: PokemonsListConfigurator = PokemonsListConfigurator()
+    private var configurator = PokemonsListConfigurator()
     
     init() {
         super.init(nibName: nil, bundle: nil)
@@ -44,23 +52,30 @@ final class PokemonsListView: UIViewController {
 extension PokemonsListView {
     private func setupInterface() {
         self.view.backgroundColor = .systemBackground
-        
         self.setupLayout()
         self.setupConstraints()
+        self.spinnerView.show(true)
     }
     
     private func setupLayout() {
         self.view.addSubview(pokemonsTableView)
+        self.view.addSubview(spinnerView)
     }
     
     private func setupConstraints() {
+        spinnerView.snp.makeConstraints({ $0.edges.equalToSuperview() })
         pokemonsTableView.snp.makeConstraints({ $0.edges.equalToSuperview() })
     }
 }
 
 extension PokemonsListView: PokemonsListViewProtocol {
     func reloadData() {
+        self.spinnerView.show(false)
         pokemonsTableView.reloadData()
+    }
+    
+    func pushViewController(vc: UIViewController) {
+        self.navigationController?.pushViewController(vc, animated: true)
     }
 }
 
@@ -79,5 +94,12 @@ extension PokemonsListView: UITableViewDataSource {
 extension PokemonsListView: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
+        self.presenter?.didSelect(at: indexPath.item)
+    }
+    
+    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+        guard indexPath.item == (self.presenter?.pokemonsCount ?? 0) - 1 else { return }
+        
+        self.presenter?.loadMorePokemons()
     }
 }
