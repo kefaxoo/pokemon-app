@@ -10,6 +10,8 @@ import UIKit
 protocol PokemonsListViewProtocol: AnyObject {
     func reloadData()
     func pushViewController(vc: UIViewController)
+    func present(_ vc: UIAlertController)
+    func stopRefreshing()
 }
 
 final class PokemonsListView: UIViewController {
@@ -25,12 +27,18 @@ final class PokemonsListView: UIViewController {
         tableView.dataSource = self
         tableView.register(PokemonTableViewCell.self)
         tableView.delegate = self
+        tableView.refreshControl = self.refreshControl
         return tableView
     }()
     
-    var presenter: PokemonsListPresenter?
-    private var configurator = PokemonsListConfigurator()
+    private lazy var refreshControl: UIRefreshControl = {
+        let refreshControl = UIRefreshControl()
+        refreshControl.addTarget(self, action: #selector(refreshData), for: .valueChanged)
+        return refreshControl
+    }()
     
+    var presenter: PokemonsListPresenterProtocol?
+    private var configurator = PokemonsListConfigurator()
     init() {
         super.init(nibName: nil, bundle: nil)
         self.setupInterface()
@@ -44,6 +52,16 @@ final class PokemonsListView: UIViewController {
         super.viewDidLoad()
         configurator.configure(with: self)
         presenter?.configureView()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        self.navigationController?.navigationBar.prefersLargeTitles = true
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        self.presenter?.viewDidAppear()
     }
 }
 
@@ -70,12 +88,27 @@ extension PokemonsListView {
 
 extension PokemonsListView: PokemonsListViewProtocol {
     func reloadData() {
-        self.spinnerView.show(false)
+        self.stopRefreshing()
         pokemonsTableView.reloadData()
     }
     
     func pushViewController(vc: UIViewController) {
         self.navigationController?.pushViewController(vc, animated: true)
+    }
+    
+    func present(_ vc: UIAlertController) {
+        self.present(vc, animated: true)
+    }
+    
+    func stopRefreshing() {
+        self.refreshControl.endRefreshing()
+        self.spinnerView.show(false)
+    }
+}
+
+extension PokemonsListView {
+    @objc private func refreshData() {
+        self.presenter?.refreshData()
     }
 }
 

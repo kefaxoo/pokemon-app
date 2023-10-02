@@ -37,4 +37,20 @@ final class PokeProvider: BaseRestApiProvider {
             }
         }
     }
+    
+    func getPokemonInfo(id: String, success: @escaping((PokeFullInfo) -> ()), failure: @escaping(() -> ())) {
+        self.urlSession.dataTask(with: URLRequest(type: PokeApi.getPokemonInfo(id: id), shouldPrintLog: self.shouldPrintLog)) { response in
+            switch response {
+                case .success(let response):
+                    guard let pokeInfo = response.data?.map(to: PokeFullInfo.self) else {
+                        failure()
+                        return
+                    }
+                    
+                    success(pokeInfo)
+                case .failure:
+                    failure()
+            }
+        }
+    }
 }

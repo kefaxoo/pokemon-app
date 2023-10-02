@@ -11,9 +11,11 @@ protocol PokemonsListPresenterProtocol: AnyObject {
     var router: PokemonsListRouterProtocol? { get set }
     var pokemonsCount: Int { get }
     func configureView()
+    func viewDidAppear()
     func getPokemonName(for index: Int) -> String
     func loadMorePokemons()
     func didSelect(at index: Int)
+    func refreshData()
 }
 
 final class PokemonsListPresenter: PokemonsListPresenterProtocol {
@@ -40,8 +42,15 @@ final class PokemonsListPresenter: PokemonsListPresenterProtocol {
             self?.canLoadMore = canLoadMore
             self?.view?.reloadData()
         }, failure: { [weak self] in
-            self?.view?.reloadData()
+            self?.router?.presentAlert(.fetchingDataError)
+            self?.view?.stopRefreshing()
         })
+    }
+    
+    func viewDidAppear() {
+        guard !NetworkManager.shared.isReachable else { return }
+        
+        self.router?.presentAlert(.hasNoInternet)
     }
     
     func getPokemonName(for index: Int) -> String {
@@ -55,12 +64,28 @@ final class PokemonsListPresenter: PokemonsListPresenterProtocol {
             self?.pokemons.append(contentsOf: pokemons)
             self?.canLoadMore = canLoadMore
             self?.view?.reloadData()
-        }, failure: {
-            self.view?.reloadData()
+        }, failure: { [weak self] in
+            self?.router?.presentAlert(.fetchingDataError)
+            self?.view?.stopRefreshing()
         })
     }
     
     func didSelect(at index: Int) {
+        guard NetworkManager.shared.isReachable else {
+            self.router?.presentAlert(.hasNoInternet)
+            return
+        }
+        
         self.router?.openPokemon(with: self.pokemons[index].id)
+    }
+    
+    func refreshData() {
+        guard NetworkManager.shared.isReachable else {
+            self.router?.presentAlert(.hasNoInternet)
+            self.view?.stopRefreshing()
+            return
+        }
+        
+        self.configureView()
     }
 }

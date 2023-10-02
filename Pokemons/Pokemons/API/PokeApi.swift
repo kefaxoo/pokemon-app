@@ -10,7 +10,7 @@ import FriendlyURLSession
 
 enum PokeApi {
     case getPokemons(offset: Int)
-    case getPokemonInfo(id: Int)
+    case getPokemonInfo(id: String)
 }
 
 extension PokeApi: BaseRestApiEnum {

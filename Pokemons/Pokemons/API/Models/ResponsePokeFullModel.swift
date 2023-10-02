@@ -23,8 +23,8 @@ final class ResponsePokeFullModel: Decodable {
         return self.types.map({ $0.type.name })
     }
     
-    enum CodingKeys: CodingKey {
-        case sprite
+    enum CodingKeys: String, CodingKey {
+        case sprite = "sprites"
         case types
         case name
         case weight
