@@ -8,13 +8,8 @@
 import Foundation
 
 final class ResponsePokeInfoModel: Decodable {
-    fileprivate let url: String
-    
     let name: String
-    
-    var id: String {
-        return String(self.url.split(separator: "/").last ?? "")
-    }
+    let id: String
     
     enum CodingKeys: CodingKey {
         case name
@@ -25,6 +20,16 @@ final class ResponsePokeInfoModel: Decodable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
      
         self.name = try container.decode(String.self, forKey: .name)
-        self.url = try container.decode(String.self, forKey: .url)
+        let url = try container.decode(String.self, forKey: .url)
+        self.id = String(url.split(separator: "/").last ?? "")
+    }
+    
+    init?(from coreDataModel: LocalPokeInfo) {
+        guard let name = coreDataModel.name,
+              let id = coreDataModel.id
+        else { return nil }
+        
+        self.name = name
+        self.id = id
     }
 }

@@ -72,7 +72,7 @@ extension PokemonsListView {
         self.view.backgroundColor = .systemBackground
         self.setupLayout()
         self.setupConstraints()
-        self.spinnerView.show(true)
+        self.spinnerView.show(self.presenter?.pokemonsIsEmpty ?? false)
     }
     
     private func setupLayout() {

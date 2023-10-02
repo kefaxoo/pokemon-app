@@ -10,6 +10,7 @@ import Foundation
 protocol PokemonsListPresenterProtocol: AnyObject {
     var router: PokemonsListRouterProtocol? { get set }
     var pokemonsCount: Int { get }
+    var pokemonsIsEmpty: Bool { get }
     func configureView()
     func viewDidAppear()
     func getPokemonName(for index: Int) -> String
@@ -27,9 +28,11 @@ final class PokemonsListPresenter: PokemonsListPresenterProtocol {
     private var canLoadMore = true
     
     var pokemonsCount: Int {
-        get {
-            return self.pokemons.count
-        }
+        return self.pokemons.count
+    }
+    
+    var pokemonsIsEmpty: Bool {
+        return self.pokemons.isEmpty
     }
     
     required init(view: PokemonsListViewProtocol) {
@@ -37,10 +40,31 @@ final class PokemonsListPresenter: PokemonsListPresenterProtocol {
     }
     
     func configureView() {
+        if !NetworkManager.shared.isReachable {
+            self.pokemons.append(contentsOf: self.interactor?.getLocalPokemons() ?? [])
+            self.canLoadMore = false
+            self.view?.reloadData()
+            return
+        }
+        
         interactor?.getPokemons(offset: self.pokemonsCount, success: { [weak self] pokemons, canLoadMore in
             self?.pokemons.append(contentsOf: pokemons)
             self?.canLoadMore = canLoadMore
             self?.view?.reloadData()
+            if !CoreDataManager.shared.fetch(LocalPokeInfo.self).isEmpty {
+                CoreDataManager.shared.clearEntities(of: LocalPokeInfo.self)
+            }
+            
+            if !CoreDataManager.shared.fetch(LocalPokeFullInfo.self).isEmpty {
+                CoreDataManager.shared.clearEntities(of: LocalPokeFullInfo.self)
+            }
+            
+            pokemons.forEach { pokemon in
+                let pokeInfo = CoreDataManager.shared.create(LocalPokeInfo.self)
+                pokeInfo.id = pokemon.id
+                pokeInfo.name = pokemon.name
+                CoreDataManager.shared.save()
+            }
         }, failure: { [weak self] in
             self?.router?.presentAlert(.fetchingDataError)
             self?.view?.stopRefreshing()
@@ -48,7 +72,9 @@ final class PokemonsListPresenter: PokemonsListPresenterProtocol {
     }
     
     func viewDidAppear() {
-        guard !NetworkManager.shared.isReachable else { return }
+        guard !NetworkManager.shared.isReachable,
+              CoreDataManager.shared.fetch(LocalPokeInfo.self).isEmpty
+        else { return }
         
         self.router?.presentAlert(.hasNoInternet)
     }
@@ -64,6 +90,12 @@ final class PokemonsListPresenter: PokemonsListPresenterProtocol {
             self?.pokemons.append(contentsOf: pokemons)
             self?.canLoadMore = canLoadMore
             self?.view?.reloadData()
+            pokemons.forEach { pokemon in
+                let pokeInfo = CoreDataManager.shared.create(LocalPokeInfo.self)
+                pokeInfo.id = pokemon.id
+                pokeInfo.name = pokemon.name
+                CoreDataManager.shared.save()
+            }
         }, failure: { [weak self] in
             self?.router?.presentAlert(.fetchingDataError)
             self?.view?.stopRefreshing()
@@ -71,12 +103,11 @@ final class PokemonsListPresenter: PokemonsListPresenterProtocol {
     }
     
     func didSelect(at index: Int) {
-        guard NetworkManager.shared.isReachable else {
+        if NetworkManager.shared.isReachable || CoreDataManager.shared.fetch(LocalPokeFullInfo.self, using: NSPredicate(format: "id==%@", self.pokemons[index].id)).first != nil {
+            self.router?.openPokemon(with: self.pokemons[index].id)
+        } else {
             self.router?.presentAlert(.hasNoInternet)
-            return
         }
-        
-        self.router?.openPokemon(with: self.pokemons[index].id)
     }
     
     func refreshData() {

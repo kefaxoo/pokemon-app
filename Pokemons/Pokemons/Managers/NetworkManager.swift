@@ -17,7 +17,7 @@ protocol NetworkManagerDelegate: AnyObject {
     func networkStateDidChange(_ status: NetworkState)
 }
 
-final class NetworkManager {
+class NetworkManager {
     static let shared = NetworkManager()
     
     private lazy var monitor = NWPathMonitor()

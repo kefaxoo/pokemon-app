@@ -34,6 +34,13 @@ final class PokemonInfoPresenter: PokemonInfoPresenterProtocol {
         PokeProvider.shared.getPokemonInfo(id: self.id) { [weak self] pokeInfo in
             self?.pokemon = pokeInfo
             self?.view?.reloadData()
+            let pokemon = CoreDataManager.shared.create(LocalPokeFullInfo.self)
+            pokemon.name = pokeInfo.name
+            pokemon.weight = Int32(pokeInfo.weight)
+            pokemon.height = Int32(pokeInfo.height)
+            pokemon.types = pokeInfo.types
+            pokemon.id = self?.id
+            CoreDataManager.shared.save()
         } failure: { [weak self] in
             self?.router?.presentAlert(.fetchingDataError)
             self?.view?.reloadData()
@@ -49,6 +56,6 @@ final class PokemonInfoPresenter: PokemonInfoPresenterProtocol {
     }
     
     func getTypes() -> String {
-        return self.pokemon?.typesArr.map({ $0.capitalized }).joined(separator: ", ") ?? ""
+        return self.pokemon?.types.map({ $0.capitalized }).joined(separator: ", ") ?? ""
     }
 }

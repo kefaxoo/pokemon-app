@@ -8,19 +8,14 @@
 import Foundation
 
 final class ResponsePokeFullModel: Decodable {
-    fileprivate let sprite: ResponsePokeSpriteModel
-    fileprivate let types: [ResponsePokeTypeModel]
-    
+    fileprivate let sprite: ResponsePokeSpriteModel?
     let name: String
     let weight: Int
     let height: Int
+    let types: [String]
     
     var frontImageLink: String {
-        return self.sprite.frontLink
-    }
-    
-    var typesArr: [String] {
-        return self.types.map({ $0.type.name })
+        return self.sprite?.frontLink ?? ""
     }
     
     enum CodingKeys: String, CodingKey {
@@ -34,11 +29,24 @@ final class ResponsePokeFullModel: Decodable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
      
-        self.sprite = try container.decode(ResponsePokeSpriteModel.self, forKey: .sprite)
-        self.types = try container.decode([ResponsePokeTypeModel].self, forKey: .types)
+        self.sprite = try container.decodeIfPresent(ResponsePokeSpriteModel.self, forKey: .sprite)
+        self.types = try container.decode([ResponsePokeTypeModel].self, forKey: .types).map({ $0.name })
         self.name = try container.decode(String.self, forKey: .name)
         self.weight = try container.decode(Int.self, forKey: .weight)
         self.height = try container.decode(Int.self, forKey: .height)
+    }
+    
+    init?(from coreDataModel: LocalPokeFullInfo?) {
+        guard let coreDataModel,
+              let name = coreDataModel.name,
+              let types = coreDataModel.types
+        else { return nil }
+        
+        self.types = types
+        self.name = name
+        self.weight = Int(coreDataModel.weight)
+        self.height = Int(coreDataModel.height)
+        self.sprite = nil
     }
 }
 
@@ -57,19 +65,17 @@ fileprivate final class ResponsePokeSpriteModel: Decodable {
 }
 
 fileprivate final class ResponsePokeTypeModel: Decodable {
-    let slot: Int
-    let type: ResponsePokeTypeInfoModel
+    let name: String
     
     enum CodingKeys: CodingKey {
-        case slot
         case type
     }
     
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
      
-        self.slot = try container.decode(Int.self, forKey: .slot)
-        self.type = try container.decode(ResponsePokeTypeInfoModel.self, forKey: .type)
+        let type = try container.decode(ResponsePokeTypeInfoModel.self, forKey: .type)
+        self.name = type.name
     }
 }
 
